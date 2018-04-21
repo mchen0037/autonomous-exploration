@@ -6,6 +6,7 @@
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Quaternion.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <angles/angles.h>
 
 geometry_msgs::Pose2D currentPose;
 logical_camera_plugin::logicalImage recent;
@@ -27,20 +28,6 @@ float PI =  3.14159265358979323846;
 //   currentPose.theta = yaw;
 // }
 
-float calibrate(float dest_angle, float curr_angle){
-
-  float calibration = dest_angle -curr_angle;
-
-  if(calibration > PI){
-    calibration - 2 * PI;
-  }
-
-  if(calibration < -PI){
-    calibration + 2 * PI;
-  }
-
-  return calibration;
-}
 
 void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
   float amclAngle = tf::getYaw(msg.pose.pose.orientation);
@@ -54,7 +41,12 @@ void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
   q.w = msg.pose.pose.orientation.w;
 
   currentPose.theta = tf::getYaw(q);
-  ROS_INFO_STREAM("Robot Pose: X "<<currentPose.x<< " Y "<<currentPose.y << " theta "<<currentPose.theta);
+  // if (currentPose.theta < 0) {
+  //   currentPose.theta += 2*PI;
+  // }
+
+//  ROS_INFO_STREAM("Robot Pose: X "<<currentPose.x<< " Y "<<currentPose.y << " theta "<<currentPose.theta);
+
 
 
 }
@@ -69,17 +61,26 @@ void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   q.y = msg.pose_rot_y;
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
-  TreasureRobotPose.theta = tf::getYaw(q);
-  ROS_INFO_STREAM("TreasureRobot Pose: X "<<TreasureRobotPose.x<< " Y "<< TreasureRobotPose.y << " theta "<<TreasureRobotPose.theta);
+  TreasureRobotPose.theta = angles::normalize_angle_positive(tf::getYaw(q));
+
+  ROS_INFO_STREAM("Quaternion x " << q.x <<" y " << q.y<<" z " << q.z<<" w " << q.w );
+  ROS_INFO_STREAM("T_R angle "<<TreasureRobotPose.theta );
+
+  //TreasureRobotPose.theta = (tf::getYaw(q) >= 0) ? tf:getYaw(q) : tf:getYaw(q) +PI;
 }
 
 void treasureLocation(){
   geometry_msgs::Pose2D TreasurePose;
-  TreasurePose.theta = calibrate(currentPose.theta,TreasureRobotPose.theta);
+  // TreasurePose.theta = calibrate(currentPose.theta,TreasureRobotPose.theta);
+  TreasurePose.theta = currentPose.theta - TreasureRobotPose.theta;
+  //ROS_INFO_STREAM("Theta R "<< currentPose.theta << " T_R " << TreasureRobotPose.theta  <<" T " << TreasurePose.theta); //all theta
+
+
   TreasurePose.x = TreasureRobotPose.x * cos(TreasureRobotPose.theta) - TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
   TreasurePose.y = TreasureRobotPose.x * sin(TreasureRobotPose.theta) + TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
-
-  ROS_INFO_STREAM("\n Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
+  //ROS_INFO_STREAM("Treasure Theta" << TreasurePose.theta);
+  foundObject = false;
+  //ROS_INFO_STREAM("Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
 
 }
 int main(int argc, char** argv) {
@@ -99,7 +100,8 @@ int main(int argc, char** argv) {
       treasureLocation();
       // getTransformation(&tfBuffer);
       // ROS_INFO_STREAM(currentPose);
-
+      // ROS_INFO_STREAM("TreasureRobot Pose: X " << TreasureRobotPose.x << " Y " << TreasureRobotPose.y << " theta "<< TreasureRobotPose.theta);
+      // ROS_INFO_STREAM("Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
 
 
     }
