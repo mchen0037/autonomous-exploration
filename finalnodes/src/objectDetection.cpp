@@ -8,7 +8,7 @@
 
 geometry_msgs::Pose2D currentPose;
 logical_camera_plugin::logicalImage recent;
-geometry_msgs::Pose2D poseOfTreasure;
+geometry_msgs::Pose2D TreasureRobotPose;
 bool foundObject = false;
 
 // void getTransformation(tf2_ros::Buffer *tfBuffer, std::string obj1, std::string obj2) {
@@ -25,35 +25,64 @@ bool foundObject = false;
 //   currentPose.theta = yaw;
 // }
 
-void sawObject(const logical_camera_plugin::logicalImage msg) {
+void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped &amcl){
+  amclAngle = tf::getYaw(amcl.pose.pose.orientation);
+  currentPose.x = msg.pose_pos_x;
+    currentPose.y = msg.pose_pos_y;
+
+  geometry_msgs::Quaternion q;
+  q.x = msg.pose_rot_x;
+    q.y = msg.pose_rot_y;
+    q.z = msg.pose_rot_z;
+    q.w = msg.pose_rot_w;
+
+    currentPose.theta = tf::getYaw(q);
+    ROS_INFO_STREAM(currentPose);
+    //ROS_INFO_STREAM("amcl angle " << amclAngle);
+}
+
+void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   recent = msg;
   foundObject = true;
   geometry_msgs::Quaternion q;
-  poseOfTreasure.x = msg.pose_pos_x;
-  poseOfTreasure.y = msg.pose_pos_y;
+  TreasureRobotPose.x = msg.pose_pos_x;
+  TreasureRobotPose.y = msg.pose_pos_y;
   q.x = msg.pose_rot_x;
   q.y = msg.pose_rot_y;
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
   poseOfTreasure.theta = tf::getYaw(q);
-
+  ROS_INFO_STREAM(TreasureRobotPose);
 }
 
+void treasureLocation(){
+  geometry_msgs::Pose2D TreasurePose;
+  TreasurePose.theta = currentPose.theta - TreasureRobotPose.theta;
+  TreasurePose.x = TreasureRobotPose.x * cos(TreasureRobotPose.theta) - TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
+  TreasurePose.y = TreasureRobotPose.x * sin(TreasureRobotPose.theta) + TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
+
+  ROS_INFO_STREAM(TreasurePose);
+
+}
 int main(int argc, char** argv) {
   ros::init(argc, argv, "detectObjects");
   ros::NodeHandle nh;
 
   ros::Rate rate(20);
 
-  ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawObject);
-  tf2_ros::Buffer tfBuffer;	//buffer to hold several transforms
-	tf2_ros::TransformListener tfListener(tfBuffer); //listener
+  ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawTreasure);
+  ros::Subscriber subAMCL = nh.subscribe("/amcl_pose", 1000, &amclMessageReceived);
+
+  tf2_ros::Buffer tfBuffer; //buffer to hold several transforms
+  tf2_ros::TransformListener tfListener(tfBuffer); //listener
 
   while (ros::ok()) {
     if (foundObject) {
       // getTransformation(&tfBuffer);
       // ROS_INFO_STREAM(currentPose);
-      ROS_INFO_STREAM(poseOfTreasure);
+
+
+
     }
     ros::spinOnce();
     rate.sleep();
