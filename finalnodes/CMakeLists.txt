@@ -10,6 +10,7 @@ project(finalnodes)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  logical_camera_plugin
 )
 
 ## System dependencies are found with CMake's conventions

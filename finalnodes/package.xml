@@ -56,6 +56,10 @@
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
 
+  <build_depend>logical_camera_plugin</build_depend>
+  <build_export_depend>logical_camera_plugin</build_export_depend>
+<exec_depend>logical_camera_plugin</exec_depend>
+
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
