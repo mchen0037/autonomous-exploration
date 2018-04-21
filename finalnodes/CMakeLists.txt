@@ -197,5 +197,5 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-add_executable(objectsDetection src/objectsDetection.cpp)
-target_link_libraries(objectsDetection ${catkin_LIBRARIES})
+add_executable(objectDetection src/objectDetection.cpp)
+target_link_libraries(objectDetection ${catkin_LIBRARIES})
