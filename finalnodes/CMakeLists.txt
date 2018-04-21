@@ -200,3 +200,6 @@ include_directories(
 
 add_executable(objectDetection src/objectDetection.cpp)
 target_link_libraries(objectDetection ${catkin_LIBRARIES})
+
+add_executable(movebase src/movebase.cpp)
+target_link_libraries(movebase ${catkin_LIBRARIES})
