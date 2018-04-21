@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
 
   while (ros::ok()) {
     if (foundObject) {
+      treasureLocation();
       // getTransformation(&tfBuffer);
       // ROS_INFO_STREAM(currentPose);
 
