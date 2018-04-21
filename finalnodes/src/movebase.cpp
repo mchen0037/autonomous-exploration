@@ -26,7 +26,7 @@ void serviceDone(const actionlib::SimpleClientGoalState& state,
     //ros::shutdown();
 }
 
-// end Jason edit 
+// end Jason edit
 
 
 int main(int argc, char** argv) {
@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
   for (double d = -8.0; d < 8.5; d = d + .75) {
     goal.target_pose.pose.position.x = d;
     //Jason added (&service feedback, &serviceActivated and &serviceDone)
+    ROS_INFO_STREAM("Goal: " << goal.target_pose.pose.position.x << " , " << goal.target_pose.pose.position.y);
     ac.sendGoal(goal,&serviceDone,&serviceActivated, &serviceFeedback);
     ac.waitForResult();
     if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)

@@ -5,6 +5,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/Quaternion.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 geometry_msgs::Pose2D currentPose;
 logical_camera_plugin::logicalImage recent;
@@ -25,16 +26,16 @@ bool foundObject = false;
 //   currentPose.theta = yaw;
 // }
 
-void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped &amcl){
-  amclAngle = tf::getYaw(amcl.pose.pose.orientation);
-  currentPose.x = msg.pose_pos_x;
-  currentPose.y = msg.pose_pos_y;
+void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
+  float amclAngle = tf::getYaw(msg.pose.pose.orientation);
+  currentPose.x = msg.pose.pose.position.x;
+  currentPose.y = msg.pose.pose.position.y;
 
   geometry_msgs::Quaternion q;
-  q.x = msg.pose_rot_x;
-  q.y = msg.pose_rot_y;
-  q.z = msg.pose_rot_z;
-  q.w = msg.pose_rot_w;
+  q.x = msg.pose.pose.orientation.x;
+  q.y = msg.pose.pose.orientation.y;
+  q.z = msg.pose.pose.orientation.z;
+  q.w = msg.pose.pose.orientation.w;
 
   currentPose.theta = tf::getYaw(q);
     //ROS_INFO_STREAM(currentPose);
@@ -51,7 +52,7 @@ void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   q.y = msg.pose_rot_y;
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
-  poseOfTreasure.theta = tf::getYaw(q);
+  TreasureRobotPose.theta = tf::getYaw(q);
   //ROS_INFO_STREAM(TreasureRobotPose);
 }
 
