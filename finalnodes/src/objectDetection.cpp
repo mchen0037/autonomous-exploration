@@ -37,7 +37,7 @@ void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped &amcl){
     q.w = msg.pose_rot_w;
 
     currentPose.theta = tf::getYaw(q);
-    ROS_INFO_STREAM(currentPose);
+    //ROS_INFO_STREAM(currentPose);
     //ROS_INFO_STREAM("amcl angle " << amclAngle);
 }
 
@@ -52,7 +52,7 @@ void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
   poseOfTreasure.theta = tf::getYaw(q);
-  ROS_INFO_STREAM(TreasureRobotPose);
+  //ROS_INFO_STREAM(TreasureRobotPose);
 }
 
 void treasureLocation(){
