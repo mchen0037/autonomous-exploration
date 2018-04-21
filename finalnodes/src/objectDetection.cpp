@@ -11,6 +11,7 @@ geometry_msgs::Pose2D currentPose;
 logical_camera_plugin::logicalImage recent;
 geometry_msgs::Pose2D TreasureRobotPose;
 bool foundObject = false;
+float PI =  3.14159265358979323846;
 
 // void getTransformation(tf2_ros::Buffer *tfBuffer, std::string obj1, std::string obj2) {
 //   geometry_msgs::TransformStamped transform;
@@ -26,6 +27,21 @@ bool foundObject = false;
 //   currentPose.theta = yaw;
 // }
 
+float calibrate(float dest_angle, float curr_angle){
+
+  float calibration = dest_angle -curr_angle;
+
+  if(calibration > PI){
+    calibration - 2 * PI;
+  }
+
+  if(calibration < -PI){
+    calibration + 2 * PI;
+  }
+
+  return calibration;
+}
+
 void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
   float amclAngle = tf::getYaw(msg.pose.pose.orientation);
   currentPose.x = msg.pose.pose.position.x;
@@ -40,6 +56,7 @@ void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
   currentPose.theta = tf::getYaw(q);
   ROS_INFO_STREAM("Robot Pose: X "<<currentPose.x<< " Y "<<currentPose.y << " theta "<<currentPose.theta);
 
+
 }
 
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
@@ -53,16 +70,16 @@ void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
   TreasureRobotPose.theta = tf::getYaw(q);
-    ROS_INFO_STREAM("TreasureRobot Pose: X "<<TreasureRobotPose.x<< " Y "<< TreasureRobotPose.y << " theta "<<TreasureRobotPose.theta);
+  ROS_INFO_STREAM("TreasureRobot Pose: X "<<TreasureRobotPose.x<< " Y "<< TreasureRobotPose.y << " theta "<<TreasureRobotPose.theta);
 }
 
 void treasureLocation(){
   geometry_msgs::Pose2D TreasurePose;
-  TreasurePose.theta = currentPose.theta - TreasureRobotPose.theta;
+  TreasurePose.theta = calibrate(currentPose.theta,TreasureRobotPose.theta);
   TreasurePose.x = TreasureRobotPose.x * cos(TreasureRobotPose.theta) - TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
   TreasurePose.y = TreasureRobotPose.x * sin(TreasureRobotPose.theta) + TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
 
-  ROS_INFO_STREAM("Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
+  ROS_INFO_STREAM("\n Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
 
 }
 int main(int argc, char** argv) {
