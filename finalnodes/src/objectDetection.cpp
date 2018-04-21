@@ -28,15 +28,15 @@ bool foundObject = false;
 void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped &amcl){
   amclAngle = tf::getYaw(amcl.pose.pose.orientation);
   currentPose.x = msg.pose_pos_x;
-    currentPose.y = msg.pose_pos_y;
+  currentPose.y = msg.pose_pos_y;
 
   geometry_msgs::Quaternion q;
   q.x = msg.pose_rot_x;
-    q.y = msg.pose_rot_y;
-    q.z = msg.pose_rot_z;
-    q.w = msg.pose_rot_w;
+  q.y = msg.pose_rot_y;
+  q.z = msg.pose_rot_z;
+  q.w = msg.pose_rot_w;
 
-    currentPose.theta = tf::getYaw(q);
+  currentPose.theta = tf::getYaw(q);
     //ROS_INFO_STREAM(currentPose);
     //ROS_INFO_STREAM("amcl angle " << amclAngle);
 }
