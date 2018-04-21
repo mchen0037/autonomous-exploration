@@ -13,7 +13,20 @@ void serviceFeedback(const move_base_msgs::MoveBaseFeedbackConstPtr& fb) {
         fb->base_position.pose.position.x << "," <<
         fb->base_position.pose.position.y);
 }
-//jason edit
+
+
+void serviceActivated() {
+    ROS_INFO_STREAM("Service received goal");
+}
+
+void serviceDone(const actionlib::SimpleClientGoalState& state,
+     const move_base_msgs::MoveBaseResultConstPtr& result) {
+    ROS_INFO_STREAM("Service completed");
+    ROS_INFO_STREAM("Final state " << state.toString().c_str());
+    //ros::shutdown();
+}
+
+// end Jason edit 
 
 
 int main(int argc, char** argv) {
@@ -49,7 +62,8 @@ int main(int argc, char** argv) {
 
   for (double d = -8.0; d < 8.5; d = d + .75) {
     goal.target_pose.pose.position.x = d;
-    ac.sendGoal(goal,&serviceFeedback);
+    //Jason added (&service feedback, &serviceActivated and &serviceDone)
+    ac.sendGoal(goal,&serviceDone,&serviceActivated, &serviceFeedback);
     ac.waitForResult();
     if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
       ROS_INFO_STREAM("Success");
