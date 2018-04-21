@@ -41,7 +41,8 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     if (foundObject) {
       // getTransformation(&tfBuffer);
-      ROS_INFO_STREAM(currentPose);
+      // ROS_INFO_STREAM(currentPose);
+      ROS_INFO_STREAM(recent);
     }
     ros::spinOnce();
     rate.sleep();
