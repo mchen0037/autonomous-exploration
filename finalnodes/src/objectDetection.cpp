@@ -4,28 +4,39 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Quaternion.h>
 
 geometry_msgs::Pose2D currentPose;
 logical_camera_plugin::logicalImage recent;
+geometry_msgs::Pose2D poseOfTreasure;
 bool foundObject = false;
 
-void getTransformation(tf2_ros::Buffer *tfBuffer, std::string obj1, std::string obj2) {
-  geometry_msgs::TransformStamped transform;
-  try {
-    transform = tfBuffer->lookupTransform(obj1, obj2, ros::Time(0));
-  }
-  catch (tf2::TransformException &ex) {
-    ROS_WARN("%s", ex.what());
-  }
-  double yaw = tf::getYaw(transform.transform.rotation);
-  currentPose.x = transform.transform.translation.x;
-  currentPose.y = transform.transform.translation.y;
-  currentPose.theta = yaw;
-}
+// void getTransformation(tf2_ros::Buffer *tfBuffer, std::string obj1, std::string obj2) {
+//   geometry_msgs::TransformStamped transform;
+//   try {
+//     transform = tfBuffer->lookupTransform(obj1, obj2, ros::Time(0));
+//   }
+//   catch (tf2::TransformException &ex) {
+//     ROS_WARN("%s", ex.what());
+//   }
+//   double yaw = tf::getYaw(transform.transform.rotation);
+//   currentPose.x = transform.transform.translation.x;
+//   currentPose.y = transform.transform.translation.y;
+//   currentPose.theta = yaw;
+// }
 
 void sawObject(const logical_camera_plugin::logicalImage msg) {
   recent = msg;
   foundObject = true;
+  geometry_msgs::Quaternion q;
+  poseOfTreasure.x = msg.pose_pos_x;
+  poseOfTreasure.y = msg.pose_pos_y;
+  q.x = msg.pose_rot_x;
+  q.y = msg.pose_rot_y;
+  q.z = msg.pose_rot_z;
+  q.w = msg.pose_rot_w;
+  poseOfTreasure.theta = tf::getYaw(q);
+
 }
 
 int main(int argc, char** argv) {
@@ -42,7 +53,7 @@ int main(int argc, char** argv) {
     if (foundObject) {
       // getTransformation(&tfBuffer);
       // ROS_INFO_STREAM(currentPose);
-      ROS_INFO_STREAM(recent);
+      ROS_INFO_STREAM(poseOfTreasure);
     }
     ros::spinOnce();
     rate.sleep();
