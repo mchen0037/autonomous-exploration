@@ -38,8 +38,8 @@ void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
   q.w = msg.pose.pose.orientation.w;
 
   currentPose.theta = tf::getYaw(q);
-    //ROS_INFO_STREAM(currentPose);
-    //ROS_INFO_STREAM("amcl angle " << amclAngle);
+  ROS_INFO_STREAM("Robot Pose: X "<<currentPose.x<< " Y "<<currentPose.y << " theta "<<currentPose.theta);
+
 }
 
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
@@ -53,7 +53,7 @@ void sawTreasure(const logical_camera_plugin::logicalImage msg) {
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
   TreasureRobotPose.theta = tf::getYaw(q);
-  //ROS_INFO_STREAM(TreasureRobotPose);
+    ROS_INFO_STREAM("TreasureRobot Pose: X "<<TreasureRobotPose.x<< " Y "<< TreasureRobotPose.y << " theta "<<TreasureRobotPose.theta);
 }
 
 void treasureLocation(){
@@ -62,7 +62,7 @@ void treasureLocation(){
   TreasurePose.x = TreasureRobotPose.x * cos(TreasureRobotPose.theta) - TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
   TreasurePose.y = TreasureRobotPose.x * sin(TreasureRobotPose.theta) + TreasureRobotPose.y * cos(TreasureRobotPose.theta) + currentPose.x;
 
-  ROS_INFO_STREAM(TreasurePose);
+  ROS_INFO_STREAM("Treasure Pose: X "<<TreasurePose.x<< " Y "<< TreasurePose.y << " theta "<<TreasurePose.theta);
 
 }
 int main(int argc, char** argv) {
