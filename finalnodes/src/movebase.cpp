@@ -28,6 +28,32 @@ void serviceDone(const actionlib::SimpleClientGoalState& state,
 
 // end Jason edit
 
+void mySendGoal(float x, float y, ros::Publisher* pub) {
+  
+  ros::Rate rate(20);
+
+  move_base_msgs::MoveBaseGoal goal;
+  goal.target_pose.header.frame_id = "map";
+  goal.target_pose.header.stamp = ros::Time::now();
+  goal.target_pose.pose.position.x = x;
+  goal.target_pose.pose.position.y = y;
+  goal.target_pose.pose.orientation = 1;
+
+  ROS_INFO_STREAM("Goal: " << goal.target_pose.pose.position.x << " , " << goal.target_pose.pose.position.y);
+  ac.sendGoal(goal,&serviceDone,&serviceActivated, &serviceFeedback);
+  ac.waitForResult();
+  if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+    ROS_INFO_STREAM("Success");
+  else {
+    ROS_ERROR_STREAM("Failure, going back 1 meter");
+    for (int i = 0; i < 60; ++i) {
+      pub->publish(twist);
+      rate.sleep();
+    }
+  }
+
+}
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "movebasetest");
@@ -58,25 +84,41 @@ int main(int argc, char** argv) {
     ROS_ERROR_STREAM("Failure");
 
   geometry_msgs::Twist twist;
-  twist.linear.x = -1.5;
+  twist.linear.x = -0.75;
 
-  for (double d = -8.0; d < 8.5; d = d + .75) {
-    goal.target_pose.pose.position.x = d;
-    //Jason added (&service feedback, &serviceActivated and &serviceDone)
-    ROS_INFO_STREAM("Goal: " << goal.target_pose.pose.position.x << " , " << goal.target_pose.pose.position.y);
-    ac.sendGoal(goal,&serviceDone,&serviceActivated, &serviceFeedback);
-    ac.waitForResult();
-    if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-      ROS_INFO_STREAM("Success");
-    else {
-      ROS_ERROR_STREAM("Failure, going back 1 meter");
-      for (int i = 0; i < 20; ++i) {
-        pub.publish(twist);
-        rate.sleep();
+  bool toPositive = true;
+
+  for (float y = 8.5; y > -8.5; y = y - 1.0) {
+    if (toPositive) {
+      for (float x = -8.0; x < 8.5; x = x + 1.0) {
+        mySendGoal(x, y, &pub);
       }
-      d = d - 0.25;
+    }
+    else {
+      for (float x = 8.0; x > -8.5; x = x - 1.0) {
+        mySendGoal(x, y, &pub);
+      }
     }
   }
+
+
+  // for (double d = -8.0; d < 8.5; d = d + .75) {
+  //   goal.target_pose.pose.position.x = d;
+  //   //Jason added (&service feedback, &serviceActivated and &serviceDone)
+  //   ROS_INFO_STREAM("Goal: " << goal.target_pose.pose.position.x << " , " << goal.target_pose.pose.position.y);
+  //   ac.sendGoal(goal,&serviceDone,&serviceActivated, &serviceFeedback);
+  //   ac.waitForResult();
+  //   if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+  //     ROS_INFO_STREAM("Success");
+  //   else {
+  //     ROS_ERROR_STREAM("Failure, going back 1 meter");
+  //     for (int i = 0; i < 60; ++i) {
+  //       pub.publish(twist);
+  //       rate.sleep();
+  //     }
+  //     // d = d - 0.25;
+  //   }
+  // }
 
 
 
