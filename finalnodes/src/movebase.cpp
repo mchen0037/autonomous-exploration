@@ -3,12 +3,14 @@
 #include <actionlib/client/simple_action_client.h>
 #include <geometry_msgs/Pose2D.h>
 #include <tf/transform_datatypes.h>
+#include <geometry_msgs/Twist.h>
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "movebasetest");
   ros::NodeHandle nh;
   ros::Rate rate(20);
 
+  ros::Publisher pub = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
   actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction> ac("move_base", true);
   while(!ac.waitForServer()) {
   }
@@ -31,14 +33,23 @@ int main(int argc, char** argv) {
   else
     ROS_ERROR_STREAM("Failure");
 
-  for (double d = -8.0; d < 8.5; d = d + 0.5) {
+  geometry_msgs::Twist twist;
+  twist.linear.x = -1.5;
+
+  for (double d = -8.0; d < 8.5; d = d + .75) {
     goal.target_pose.pose.position.x = d;
     ac.sendGoal(goal);
     ac.waitForResult();
     if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
       ROS_INFO_STREAM("Success");
-    else
-      ROS_ERROR_STREAM("Failure");
+    else {
+      ROS_ERROR_STREAM("Failure, going back 1 meter");
+      for (int i = 0; i < 20; ++i) {
+        pub.publish(twist);
+        rate.sleep();
+      }
+      d = d - 0.25;
+    }
   }
 
 
