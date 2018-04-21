@@ -5,6 +5,17 @@
 #include <tf/transform_datatypes.h>
 #include <geometry_msgs/Twist.h>
 
+
+//jason edit
+void serviceFeedback(const move_base_msgs::MoveBaseFeedbackConstPtr& fb) {
+    ROS_INFO_STREAM("Service still running");
+    ROS_INFO_STREAM("Current pose (x,y) " <<
+        fb->base_position.pose.position.x << "," <<
+        fb->base_position.pose.position.y);
+}
+//jason edit
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "movebasetest");
   ros::NodeHandle nh;
@@ -38,7 +49,7 @@ int main(int argc, char** argv) {
 
   for (double d = -8.0; d < 8.5; d = d + .75) {
     goal.target_pose.pose.position.x = d;
-    ac.sendGoal(goal);
+    ac.sendGoal(goal,&serviceFeedback);
     ac.waitForResult();
     if (ac.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
       ROS_INFO_STREAM("Success");
