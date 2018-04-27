@@ -8,46 +8,62 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <angles/angles.h>
 #include <map>
+//#include <tf/Matrix3x3.h>
 
 
 using namespace std;
 
-geometry_msgs::Pose2D TreasureRobotPose;
+geometry_msgs::Pose2D currentPose;
 
 struct treasureChest{
 
-  map <string, pair<float, float> > chest;
+  map<string, pair<float, float> > chest;
 
   treasureChest(){}
+
+  void printTreasures(){
+    for(map<string, pair<float, float> >::iterator it = chest.begin(); it !=chest.end(); it++){
+      ROS_INFO_STREAM(it->first<< " location x: " << it->second.first << " y: "<< it->second.second );
+    }
+
+  }
 
 void addTreasure(string id, float x, float y){
     if(chest.count(id)){
       ROS_INFO_STREAM("We already got that treasure my dude");
     }
     else{
-
-      chest.insert(make_pair(id, make_pair (x,y)));
+      chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y+y)));
+      printTreasures();
 
     }
   }
+
+
 
 };
 
 treasureChest tc;
 
-void sawTreasure(const logical_camera_plugin::logicalImage msg) {
-
+void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
+  float amclAngle = tf::getYaw(msg.pose.pose.orientation);
+  currentPose.x = msg.pose.pose.position.x;
+  currentPose.y = msg.pose.pose.position.y;
 
   geometry_msgs::Quaternion q;
-  q.x = msg.pose_rot_x;
-  q.y = msg.pose_rot_y;
-  q.z = msg.pose_rot_z;
-  q.w = msg.pose_rot_w;
+  q.x = msg.pose.pose.orientation.x;
+  q.y = msg.pose.pose.orientation.y;
+  q.z = msg.pose.pose.orientation.z;
+  q.w = msg.pose.pose.orientation.w;
 
-  double roll, pitch, yaw;
-  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+  currentPose.theta = tf::getYaw(q);
 
-  ROS_INFO_STREAM(yaw);
+}
+
+void sawTreasure(const logical_camera_plugin::logicalImage msg) {
+
+  tc.addTreasure(msg.modelName ,msg.pose_pos_x, msg.pose_pos_y);
+
 
 }
 
@@ -58,7 +74,7 @@ int main(int argc, char** argv) {
   ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawTreasure);
-//ros::Subscriber subAMCL = nh.subscribe("/amcl_pose", 1000, &amclMessageReceived);
+  ros::Subscriber subAMCL = nh.subscribe("/amcl_pose", 1000, &amclMessageReceived);
 
 
   while (ros::ok()) {

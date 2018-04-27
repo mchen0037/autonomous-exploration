@@ -47,8 +47,6 @@ void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
 
 //  ROS_INFO_STREAM("Robot Pose: X "<<currentPose.x<< " Y "<<currentPose.y << " theta "<<currentPose.theta);
 
-
-
 }
 
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
