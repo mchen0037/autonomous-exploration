@@ -9,24 +9,24 @@
 #include <angles/angles.h>
 #include <map>
 
-
 using namespace std;
+typedef pair<float, float> coordinates;
 
 geometry_msgs::Pose2D TreasureRobotPose;
 
 struct treasureChest{
 
-  map <string, pair<float, float> > chest;
+  map <string, coordinates> chest;
 
   treasureChest(){}
 
-void addTreasure(string id, float x, float y){
+  addTreasure(string id, float x, float y){
     if(chest.count(id)){
       ROS_INFO_STREAM("We already got that treasure my dude");
     }
     else{
 
-      chest.insert(make_pair(id, make_pair (x,y)));
+      chest.insert(id, make_pair (a,b));
 
     }
   }
@@ -37,32 +37,24 @@ treasureChest tc;
 
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
 
-
   geometry_msgs::Quaternion q;
   q.x = msg.pose_rot_x;
   q.y = msg.pose_rot_y;
   q.z = msg.pose_rot_z;
   q.w = msg.pose_rot_w;
 
-  double roll, pitch, yaw;
-  tf::Matrix3x3(q).getRPY(roll, pitch, yaw);
+  TreasureRobotPose.theta = angles::normalize_angle_positive(tf::getYaw(q));
 
-  ROS_INFO_STREAM(yaw);
+  ROS_INFO_STREAM(TreasureRobotPose.theta);
 
 }
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "detectObjects");
-  ros::NodeHandle nh;
-
-  ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawTreasure);
-//ros::Subscriber subAMCL = nh.subscribe("/amcl_pose", 1000, &amclMessageReceived);
 
 
-  while (ros::ok()) {
-    ros::spinOnce();
-  }
+
+
 
 }
