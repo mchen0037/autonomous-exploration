@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <geometry_msgs/Quaternion.h>
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
       ROS_INFO_STREAM("Plan:");
       for (int i = 0; i < plannermsg.response.plan.poses.size(); ++i) {
         tf2::fromMsg(plannermsg.response.plan.poses[i].pose.orientation, q);
-        geometry_msgs::Pose nextGoal = plannermsg.response.plan.poses[i];
+        geometry_msgs::PoseStamped nextGoal = plannermsg.response.plan.poses[i];
 
 
 
