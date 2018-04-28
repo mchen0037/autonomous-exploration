@@ -12,8 +12,6 @@ def subScan(data):
     print('Max:' + str(maxRange) + ' towards ' + str(maxDegrees))
     print('Min:' + str(minRange) + ' towards ' + str(minDegrees))
 
-
-
 def main():
     rospy.init_node('getscan', anonymous = True)
     rate = rospy.Rate(20)

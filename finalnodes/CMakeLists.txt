@@ -203,3 +203,6 @@ target_link_libraries(objectDetection ${catkin_LIBRARIES})
 
 add_executable(movebase src/movebase.cpp)
 target_link_libraries(movebase ${catkin_LIBRARIES})
+
+add_executable(movement src/movement.cpp)
+target_link_libraries(movement ${catkin_LIBRARIES})
