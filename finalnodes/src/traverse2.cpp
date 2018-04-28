@@ -154,8 +154,28 @@ int main(int argc, char** argv){
 
 			//The actual moving which controls both linear and angular, deaccalarates togiven bound
 			while(distance > .1){ //Degree of accuracy
-				//transformStamped = buffer.lookupTransform("odom", "base_link",ros::Time(0));
+				calibration = targetAngle() - curr_theta;
 
+				if(!(calibration < 0.2 && calibration > -0.2)){ //if my angle to dest is off or I deveate, stop and fix it first
+					while(!(calibration < 0.2 && calibration > -0.2)){ 
+					//	ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
+
+						toRotate.angular.z = calibration * 2; 
+						pubTwist.publish(toRotate);
+						ros::spinOnce();
+						rate.sleep();
+
+						calibration = destAngle-curr_theta;
+						ROS_INFO_STREAM("dest - curr angle" << calibration);
+
+					//	ROS_INFO_STREAM ("dest "<<destAngle <<" curr Angle "<<tf::getYaw(transformStamped.transform.rotation) << " calibration "  << calibration);
+
+					}
+
+					pubTwist.publish(stop);
+					rate.sleep();
+				}
+				
 				toMove.angular.z = 0; 
 				toMove.linear.x = distance;
 				pubTwist.publish(toMove);
@@ -163,10 +183,9 @@ int main(int argc, char** argv){
 				rate.sleep();
 
 				distance = dist();
-				//calibration = targetAngle() - curr_theta; //our calibration is based on differenct angles because we're moving now
-
+					
 				ROS_INFO_STREAM("angle difference = "<< calibration << " | distance = " << distance) ;
-		
+			
 
 			}
 
