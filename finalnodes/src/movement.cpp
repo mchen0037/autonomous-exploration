@@ -1,11 +1,20 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Pose2D.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/GetPlan.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <geometry_msgs/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Empty.h>
 #include <tf2/utils.h>
+
+bool wait = true;
+
+void toReset(const std_msgs::Empty msg){
+
+  wait = false;
+}
 
 
 geometry_msgs::Pose current_pose;
@@ -21,6 +30,11 @@ int main(int argc, char** argv) {
   ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, getCurrentPose);
+
+  ros::Publisher pubTwist = nh.advertise<geometry_msgs::Pose2D>("targetpose", 1000);
+
+  ros::Subscriber restart = nh.subscribe<std_msgs::Empty>("restartTopic", 1000, toReset);
+
   ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
   client.waitForExistence();
 
@@ -59,10 +73,27 @@ int main(int argc, char** argv) {
 
 
 
+        geometry_msgs::Pose2D temp;
+        temp.x = nextGoal.pose.position.x;
+        temp.y = nextGoal.pose.position.y;
+        temp.theta = tf2::getYaw(nextGoal.pose.orientation);
+
+        pubTwist.publish(temp);
+
+        wait = true;
 
         ROS_INFO_STREAM("X " << plannermsg.response.plan.poses[i].pose.position.x <<
           " Y " << plannermsg.response.plan.poses[i].pose.position.y <<
           " T " << tf2::getYaw(q));
+
+        ROS_INFO_STREAM("Waiting to finish..");
+        while(wait){
+          ros::spinOnce();
+          rate.sleep();
+          // ROS_INFO_STREAM("IM WAITING");
+        }
+
+
       }
     }
     else {

@@ -209,3 +209,6 @@ target_link_libraries(movement ${catkin_LIBRARIES})
 
 add_executable(graph src/graph.cpp)
 target_link_libraries(graph ${catkin_LIBRARIES})
+
+add_executable(traverse src/traverse.cpp)
+target_link_libraries(traverse ${catkin_LIBRARIES})
