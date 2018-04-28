@@ -2,7 +2,9 @@
 #include <geometry_msgs/Pose.h>
 #include <vector>
 
-vector < vector < bool > > graph;
+// split the map into a 180x180 graph
+bool* graph = new bool[32400];
+
 
 geometry_msgs::Pose current_pose;
 void subPose(const geometry_msgs::Pose msg) {
@@ -15,6 +17,8 @@ int main(int argc, char** argv) {
 
   ros::Rate rate(20);
 
+
+
   ros::Subscriber sub = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, subPose);
-  
+
 }

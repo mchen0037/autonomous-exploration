@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
     plannermsg.request.goal.pose.orientation = tf2::toMsg(q);
 
     plannermsg.request.tolerance = 0.2;
-k
+
     if (client.call(plannermsg)) {
       ROS_INFO_STREAM("Called planner");
       ROS_INFO_STREAM("Plan:");
@@ -56,7 +56,7 @@ k
         tf2::fromMsg(plannermsg.response.plan.poses[i].pose.orientation, q);
         geometry_msgs::Pose nextGoal = plannermsg.response.plan.poses[i];
 
-        
+
 
 
         ROS_INFO_STREAM("X " << plannermsg.response.plan.poses[i].pose.position.x <<
