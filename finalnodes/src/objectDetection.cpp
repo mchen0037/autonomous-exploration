@@ -14,6 +14,7 @@
 using namespace std;
 
 geometry_msgs::Pose2D currentPose;
+float PI =  3.14159265358979323846;
 
 struct treasureChest{
 
@@ -31,9 +32,23 @@ struct treasureChest{
 void addTreasure(string id, float x, float y){
     if(chest.count(id)){
       // ROS_INFO_STREAM("We already got that treasure my dude");
+       
     }
     else{
-      chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y+y)));
+
+      if(currentPose.theta< PI/2){
+        chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y+y)));
+      }
+      else if(currentPose.theta >= PI/2 && currentPose.theta< PI){
+        chest.insert(make_pair(id, make_pair (currentPose.x-x, currentPose.y+y)));
+      }
+      else if(currentPose.theta <= PI && currentPose.theta< 3/2*PI){
+        chest.insert(make_pair(id, make_pair (currentPose.x-x, currentPose.y-y)));
+      }
+      else {
+        chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y-y)));
+      }
+      
       printTreasures();
 
     }
@@ -52,7 +67,7 @@ void getPose(const geometry_msgs::Pose msg){
 
   geometry_msgs::Quaternion q;
   q = msg.orientation;
-  currentPose.theta = tf::getYaw(q);
+  currentPose.theta = angles::normalize_angle_positive(tf::getYaw(q));
 
 }
 
