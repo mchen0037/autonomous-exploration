@@ -7,6 +7,8 @@ project(finalnodes)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -212,3 +214,6 @@ target_link_libraries(graph ${catkin_LIBRARIES})
 
 add_executable(traverse src/traverse.cpp)
 target_link_libraries(traverse ${catkin_LIBRARIES})
+
+add_executable(discreteMap src/discreteMap.cpp)
+target_link_libraries(discreteMap ${catkin_LIBRARIES})

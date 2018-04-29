@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     if (client.call(plannermsg)) {
       ROS_INFO_STREAM("Called planner");
       ROS_INFO_STREAM("Plan:");
-      for (int i = 0; i < plannermsg.response.plan.poses.size(); ++i) {
+      for (int i = 0; i < plannermsg.response.plan.poses.size(); i = (i +10>= plannermsg.response.plan.poses.size()) ? plannermsg.response.plan.poses.size()-1 : i+10 ) {
         tf2::fromMsg(plannermsg.response.plan.poses[i].pose.orientation, q);
         geometry_msgs::PoseStamped nextGoal = plannermsg.response.plan.poses[i];
 

@@ -37,6 +37,7 @@ void currPose(const geometry_msgs::Pose msg){
 
 void destPose(const geometry_msgs::Pose msg){
 
+
     dest_x = msg.position.x;
     dest_y = msg.position.y;
     dest_theta = angles::normalize_angle_positive(tf2::getYaw(msg.orientation));
@@ -122,26 +123,31 @@ int main(int argc, char** argv){
 
 			float destAngle = targetAngle();	
 
-			ROS_INFO_STREAM("Angle I need = "<<destAngle <<" current Angle "<< currAngle);
+			ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
 
-			float targetRotation = destAngle - currAngle; //may need to change if angle between rotation is really tiny
-			/*So now we have the distance we need to traverse and how much we need to rotate*/
+			// ROS_INFO_STREAM("Angle I need = "<<destAngle <<" current Angle "<< currAngle);
 
-			ROS_INFO_STREAM("Distance to target "<< distance << " | Rotation I need to take "<< targetRotation);
+			// float targetRotation = destAngle - currAngle; //may need to change if angle between rotation is really tiny
+			// /*So now we have the distance we need to traverse and how much we need to rotate*/
+
+			// ROS_INFO_STREAM("Distance to target "<< distance << " | Rotation I need to take "<< targetRotation);
 
 
 			//this is where my calibration and first rotation happens
-			float calibration = destAngle - curr_theta;
-			while(!(calibration < 0.2 && calibration > -0.2)){ 
+
+rerotate:			
+			float calibration = targetAngle() - curr_theta;
+			while(!(calibration < 0.1 && calibration > -0.1)){ 
 			//	ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
 
 				toRotate.angular.z = calibration * 2; 
+				toRotate.linear.x = 0;
 				pubTwist.publish(toRotate);
 				ros::spinOnce();
 				rate.sleep();
 
-				calibration = destAngle-curr_theta;
-				ROS_INFO_STREAM("dest - curr angle" << calibration);
+				calibration = targetAngle() - curr_theta;
+				ROS_INFO_STREAM("rotating only: angle = " << calibration);
 
 			//	ROS_INFO_STREAM ("dest "<<destAngle <<" curr Angle "<<tf::getYaw(transformStamped.transform.rotation) << " calibration "  << calibration);
 
@@ -150,22 +156,23 @@ int main(int argc, char** argv){
 			pubTwist.publish(stop);
 			rate.sleep();
 
-			ROS_INFO_STREAM("Finished first rotation");
+			//ROS_INFO_STREAM("Finished first rotation");
 
 			//The actual moving which controls both linear and angular, deaccalarates togiven bound
 			while(distance > .1){ //Degree of accuracy
 				//transformStamped = buffer.lookupTransform("odom", "base_link",ros::Time(0));
 
-				toMove.angular.z = 0; 
+				if (absolute(calibration) > .3){ goto rerotate; }
+				toMove.angular.z = calibration; 
 				toMove.linear.x = distance;
 				pubTwist.publish(toMove);
 				ros::spinOnce();
 				rate.sleep();
 
 				distance = dist();
-				//calibration = targetAngle() - curr_theta; //our calibration is based on differenct angles because we're moving now
+				calibration = targetAngle() - curr_theta; //our calibration is based on differenct angles because we're moving now
 
-				ROS_INFO_STREAM("angle difference = "<< calibration << " | distance = " << distance) ;
+				ROS_INFO_STREAM("moving:  angle  = "<< calibration << " | distance = " << distance) ;
 		
 
 			}
