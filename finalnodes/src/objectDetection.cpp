@@ -30,7 +30,7 @@ struct treasureChest{
 
 void addTreasure(string id, float x, float y){
     if(chest.count(id)){
-      ROS_INFO_STREAM("We already got that treasure my dude");
+      // ROS_INFO_STREAM("We already got that treasure my dude");
     }
     else{
       chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y+y)));
@@ -45,17 +45,13 @@ void addTreasure(string id, float x, float y){
 
 treasureChest tc;
 
-void amclMessageReceived(const geometry_msgs::PoseWithCovarianceStamped msg){
-  float amclAngle = tf::getYaw(msg.pose.pose.orientation);
-  currentPose.x = msg.pose.pose.position.x;
-  currentPose.y = msg.pose.pose.position.y;
+void getPose(const geometry_msgs::Pose msg){
+  float amclAngle = tf::getYaw(msg.orientation);
+  currentPose.x = msg.position.x;
+  currentPose.y = msg.position.y;
 
   geometry_msgs::Quaternion q;
-  q.x = msg.pose.pose.orientation.x;
-  q.y = msg.pose.pose.orientation.y;
-  q.z = msg.pose.pose.orientation.z;
-  q.w = msg.pose.pose.orientation.w;
-
+  q = msg.orientation;
   currentPose.theta = tf::getYaw(q);
 
 }
@@ -74,7 +70,7 @@ int main(int argc, char** argv) {
   ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawTreasure);
-  ros::Subscriber subAMCL = nh.subscribe("/amcl_pose", 1000, &amclMessageReceived);
+  ros::Subscriber subPose = nh.subscribe("perfect_localization", 1000, getPose);
 
 
   while (ros::ok()) {

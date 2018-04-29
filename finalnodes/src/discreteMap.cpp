@@ -36,13 +36,12 @@ void discretize(const nav_msgs::OccupancyGrid msg){
         graph.push_back(count);
       }
     }
-
-    for(int i =0; i < graph.size(); i++){
-      std::cout << graph[i] << "\t";
-      if ( (i+1)%(400/square) == 0 ){
-        std::cout <<"\n\n";
-      }
-   }
+    // for(int i =0; i < graph.size(); i++){
+    //   std::cout << graph[i] << "\t";
+    //   if ( (i+1)%(400/square) == 0 ){
+    //     std::cout <<"\n\n";
+    //   }
+   // }
  }
 }
 
