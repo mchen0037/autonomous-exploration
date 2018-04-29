@@ -7,6 +7,7 @@
 
 std::vector <int> graph;
 geometry_msgs::Pose current_pose;
+bool gotMap = false;
 
 int matToArr(int row, int col, int row_tar, int col_tar){
   return (row_tar-1) * col + col_tar - 1;
@@ -18,29 +19,32 @@ float roundTenth(float a) {
 }
 
 void discretize(const nav_msgs::OccupancyGrid msg){
-  int square = 10; // square x square
-//gets me to the start of every square
+  if (!gotMap) {
+    gotMap = true;
+    int square = 10; // square x square
+  //gets me to the start of every square
 
-  for (int j = 200; j < 600; j+=square) {
-    for (int i = 200; i < 600;i+=square) {
-      int count = 0;
-      for(int l = 0; l < square; l++) {
-        for(int k = 0; k < square; k++) {
-          if((int)msg.data[matToArr(800,800,j+l,i+k)] != 0 && count < 1) {
-            count++;
+    for (int j = 200; j < 600; j+=square) {
+      for (int i = 200; i < 600;i+=square) {
+        int count = 0;
+        for(int l = 0; l < square; l++) {
+          for(int k = 0; k < square; k++) {
+            if((int)msg.data[matToArr(800,800,j+l,i+k)] != 0 && count < 1) {
+              count++;
+            }
           }
         }
+        graph.push_back(count);
       }
-      graph.push_back(count);
     }
-  }
 
-  for(int i =0; i < graph.size(); i++){
-    std::cout << graph[i] << "\t";
+    for(int i =0; i < graph.size(); i++){
+      std::cout << graph[i] << "\t";
 
-    if ( (i+1)%(400/square) == 0 ){
-      std::cout <<"\n\n";
-    }
+      if ( (i+1)%(400/square) == 0 ){
+        std::cout <<"\n\n";
+      }
+   }
  }
 }
 
@@ -57,7 +61,6 @@ void subPose(const geometry_msgs::Pose msg) {
   std::cout << "I can see from " << rounded_current_X << "up to " << roundTenth(seeUpToX)
     << " and " << rounded_current_Y << " to " << roundTenth(seeUpToY) << "\n";
 }
-
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "discreteMap");
