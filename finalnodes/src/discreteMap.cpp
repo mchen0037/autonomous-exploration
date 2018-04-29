@@ -18,25 +18,39 @@ int matToArr(int row, int col, int row_tar, int col_tar){
 }
 
 void discretize(const nav_msgs::OccupancyGrid msg){
+  int square = 10; // square x square
 //gets me to the start of every square
-  for(int j = 200; j < 600; j+=25){
-    for(int i = 200; i < 600;i+=25){
+  vector <int> graph;
+  for(int j = 200; j < 600; j+=square){
+    for(int i = 200; i < 600;i+=square){
 
-      for(int l = 0; l < 25; l++){
-        for(int k = 0; k < 25; k++){
+
+
+      int count = 0;
+      for(int l = 0; l < square; l++){
+        for(int k = 0; k < square; k++){
       
-          cout << ((int)msg.data[matToArr(800,800,j+l,i+k)]) <<"\t";
-
+          if((int)msg.data[matToArr(800,800,j+l,i+k)] != 0 && count < 1){
+            count++;
+          } 
         }
-        cout << endl;
       }
-      ros::shutdown();
-        cout << endl;
-          cout << endl;
-            cout << endl;
+
+
+      graph.push_back(count);
+
 
     }
   }
+
+  for(int i =0; i < graph.size(); i++){
+    cout << graph[i] << "\t";
+    
+    if ( (i+1)%(400/square) == 0 ){
+      cout <<"\n\n";
+    }
+ }
+
 }
 
 
