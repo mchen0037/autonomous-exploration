@@ -27,10 +27,10 @@ void subPose(const geometry_msgs::Pose msg) {
   std::cout << "I can see from " << rounded_current_X << "up to " << roundTenth(seeUpToX)
     << " and " << rounded_current_Y << " to " << roundTenth(seeUpToY) << "\n";
 
-
+  
 
   for (rounded_current_X; rounded_current_X < seeUpToX; rounded_current_X += 0.1) {
-    
+
     for (rounded_current_Y; rounded_current_Y < seeUpToY; rounded_current_Y += 0.1) {
 
     }
