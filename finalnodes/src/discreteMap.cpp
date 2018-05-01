@@ -6,10 +6,13 @@
 #include <map>
 #include <std_msgs/String.h>
 
-std::string graph;
+std::string graph = "";
 // std_msgs::Int32MultiArray arr;
 geometry_msgs::Pose current_pose;
 bool gotMap = false;
+bool finished = false;
+nav_msgs::OccupancyGrid mainMap;
+int square = 10; // square x square
 
 int matToArr(int row, int col, int row_tar, int col_tar){
   return (row_tar-1) * col + col_tar - 1;
@@ -23,29 +26,41 @@ float roundHalf(float a) {
   return (floor((a*2)+0.5)/2);
 }
 
+
+bool occupied (int i, int j){
+  for(int l = 0; l < square; l++) {
+    for(int k = 0; k < square; k++) {
+      if((int)mainMap.data[matToArr(800,800,j+l,i+k)] != 0) {
+         return true;
+      }
+    }
+  }
+  return false;
+}
+
 void discretize(const nav_msgs::OccupancyGrid msg){
   if (!gotMap) {
+    mainMap = msg;
     gotMap = true;
-    int square = 10; // square x square
-    int interval = 0; //interval for my array
-
   //gets me to the start of every square
     for (int j = 200; j < 600; j+=square) {
       for (int i = 200; i < 600;i+=square) {
-
-        for(int l = 0; l < square; l++) {
-          for(int k = 0; k < square; k++) {
-            if((int)msg.data[matToArr(800,800,j+l,i+k)] != 0 && graph[interval] == 0) { //if you want actual count delete second condition
-              graph[interval] = 1;
-            }
-          }
-        }
-        interval++;
+        graph += (occupied(i,j)) ? '1' : '0';
       }
-
     }
+
+/*Prints out graph*/
+    for(int i = 0; i < graph.length(); i++){
+      std::cout << graph[i];
+      if((i+1)%(400/square) == 0){
+        std::cout<< '\n';
+      }
+    }
+    finished = true;
  }
 }
+
+
 
 void subPose(const geometry_msgs::Pose msg) {
   current_pose = msg;
@@ -75,19 +90,16 @@ int main(int argc, char** argv) {
   ros::Subscriber sub2 = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, subPose);
   ros::Publisher pub = nh.advertise<std_msgs::String>("viewed_map", 1000);
 
-  graph = new char[1600];
-  ROS_INFO_STREAM(graph);
-  for (int i = 0; i < 1600; ++i) {
-    graph[i] = 0;
-  }
 
   while (ros::ok()) {
-    ROS_INFO_STREAM(graph);
 
-    std_msgs::String msg;
-    msg.data = graph;
+    if(finished){
+      std_msgs::String msg;
+      msg.data = graph;
+      pub.publish(msg);
+      finished = false;
+    }
 
-    pub.publish(msg);
     ros::spinOnce();
     rate.sleep();
   }

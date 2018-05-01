@@ -70,27 +70,27 @@ int main(int argc, char** argv) {
       for (int i = 0; i < plannermsg.response.plan.poses.size(); i = (i +30>= plannermsg.response.plan.poses.size()) ? plannermsg.response.plan.poses.size()-1 : i+30 ) {
         tf2::fromMsg(plannermsg.response.plan.poses[i].pose.orientation, q);
         geometry_msgs::PoseStamped nextGoal = plannermsg.response.plan.poses[i];
-        ROS_INFO_STREAM(nextGoal);
-        getchar();
+        //ROS_INFO_STREAM(nextGoal);
+        //getchar();
 
-        // for (int j = 0; j < 20; ++j) {
-        //   pubTwist.publish(nextGoal.pose);
-        //   rate.sleep();
-        // }
+        for (int j = 0; j < 20; ++j) {
+          pubTwist.publish(nextGoal.pose);
+          rate.sleep();
+        }
 
-        // wait = true;
+        wait = true;
 
-        // ROS_INFO_STREAM("X " << plannermsg.response.plan.poses[i].pose.position.x <<
-        //   " Y " << plannermsg.response.plan.poses[i].pose.position.y <<
-        //   " T " << tf2::getYaw(q));
+        ROS_INFO_STREAM("X " << plannermsg.response.plan.poses[i].pose.position.x <<
+          " Y " << plannermsg.response.plan.poses[i].pose.position.y <<
+          " T " << tf2::getYaw(q));
 
-        // ROS_INFO_STREAM("Waiting to finish..");
-        // while(wait && ros::ok()){
-        //   pubTwist.publish(nextGoal.pose);
-        //   ros::spinOnce();
-        //   rate.sleep();
-        //   // ROS_INFO_STREAM("IM WAITING");
-        // }
+        ROS_INFO_STREAM("Waiting to finish..");
+        while(wait && ros::ok()){
+          pubTwist.publish(nextGoal.pose);
+          ros::spinOnce();
+          rate.sleep();
+          
+        }
 
 
       }
