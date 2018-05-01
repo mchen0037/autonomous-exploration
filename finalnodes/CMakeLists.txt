@@ -214,3 +214,6 @@ target_link_libraries(traverse ${catkin_LIBRARIES})
 
 add_executable(discreteMap src/discreteMap.cpp)
 target_link_libraries(discreteMap ${catkin_LIBRARIES})
+
+add_executable(calcGoal src/calcGoal.cpp)
+target_link_libraries(calcGoal ${catkin_LIBRARIES})

@@ -29,14 +29,14 @@ struct treasureChest{
 
   }
 
-void addTreasure(string id, float x, float y){
+  void addTreasure(string id, float x, float y){
     if(chest.count(id)){
       // ROS_INFO_STREAM("We already got that treasure my dude");
-       
+
     }
     else{
 
-      if(currentPose.theta< PI/2){
+      if(currentPose.theta < PI/2){
         chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y+y)));
       }
       else if(currentPose.theta >= PI/2 && currentPose.theta< PI){
@@ -48,13 +48,11 @@ void addTreasure(string id, float x, float y){
       else {
         chest.insert(make_pair(id, make_pair (currentPose.x+x, currentPose.y-y)));
       }
-      
+
       printTreasures();
 
     }
   }
-
-
 
 };
 
@@ -74,8 +72,6 @@ void getPose(const geometry_msgs::Pose msg){
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
 
   tc.addTreasure(msg.modelName ,msg.pose_pos_x, msg.pose_pos_y);
-
-
 }
 
 int main(int argc, char** argv) {
