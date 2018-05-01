@@ -42,7 +42,7 @@ struct treasureChest{
       else if(currentPose.theta >= PI/2 && currentPose.theta< PI){
         chest.insert(make_pair(id, make_pair (currentPose.x-x, currentPose.y+y)));
       }
-      else if(currentPose.theta <= PI && currentPose.theta< 3/2*PI){
+      else if(currentPose.theta >= PI && currentPose.theta< PI * 3/2){
         chest.insert(make_pair(id, make_pair (currentPose.x-x, currentPose.y-y)));
       }
       else {
