@@ -36,8 +36,6 @@ void currPose(const geometry_msgs::Pose msg){
 }
 
 void destPose(const geometry_msgs::Pose msg){
-
-
     dest_x = msg.position.x;
     dest_y = msg.position.y;
     dest_theta = angles::normalize_angle_positive(tf2::getYaw(msg.orientation));
@@ -90,7 +88,7 @@ int main(int argc, char** argv){
 	ros::Rate rate(hertz);
 
 	ros::Subscriber subDest = nh.subscribe("targetpose", 1000, destPose);
-	ros::Subscriber subCurr = nh.subscribe("/perfect_localization", 1000, currPose);
+	ros::Subscriber subCurr = nh.subscribe("perfect_localization", 1000, currPose);
 	
 	//ros::Subscriber subTF = nh.subscribe("/tf2_ros", 1000, &tf2MessageReceived);
 

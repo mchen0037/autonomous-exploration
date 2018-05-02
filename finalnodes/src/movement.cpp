@@ -10,17 +10,19 @@
 #include <iostream>
 
 bool wait = true;
+geometry_msgs::Pose current_goal;
+geometry_msgs::Pose current_pose;
 
 void toReset(const std_msgs::Empty msg){
-
   wait = false;
 }
 
-
-geometry_msgs::Pose current_pose;
-
 void getCurrentPose(const geometry_msgs::Pose msg) {
   current_pose = msg;
+}
+
+void getGoal(const geometry_msgs::Pose msg) {
+  current_goal = msg;
 }
 
 int main(int argc, char** argv) {
@@ -30,10 +32,9 @@ int main(int argc, char** argv) {
   ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, getCurrentPose);
-
-  ros::Publisher pubTwist = nh.advertise<geometry_msgs::Pose>("targetpose", 1000);
-
+  ros::Publisher pubGoal = nh.advertise<geometry_msgs::Pose>("targetpose", 1000);
   ros::Subscriber restart = nh.subscribe<std_msgs::Empty>("restartTopic", 1000, toReset);
+  ros::Subscriber subGoal = nh.subscribe<geometry_msgs::Pose>("goal", 1000, getGoal);
 
   ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
   client.waitForExistence();
@@ -58,9 +59,9 @@ int main(int argc, char** argv) {
 
     plannermsg.request.goal.header.frame_id = "map";
     plannermsg.request.goal.header.stamp = ros::Time::now();
-    plannermsg.request.goal.pose.position.x = -8;
-    plannermsg.request.goal.pose.position.y = 8;
-    plannermsg.request.goal.pose.orientation = tf2::toMsg(q);
+    plannermsg.request.goal.pose.position.x = current_goal.position.x;
+    plannermsg.request.goal.pose.position.y = current_goal.position.y;
+    plannermsg.request.goal.pose.orientation = current_goal.orientation;
 
     plannermsg.request.tolerance = 0.2;
 
@@ -70,11 +71,9 @@ int main(int argc, char** argv) {
       for (int i = 0; i < plannermsg.response.plan.poses.size(); i = (i +30>= plannermsg.response.plan.poses.size()) ? plannermsg.response.plan.poses.size()-1 : i+30 ) {
         tf2::fromMsg(plannermsg.response.plan.poses[i].pose.orientation, q);
         geometry_msgs::PoseStamped nextGoal = plannermsg.response.plan.poses[i];
-        //ROS_INFO_STREAM(nextGoal);
-        //getchar();
 
         for (int j = 0; j < 20; ++j) {
-          pubTwist.publish(nextGoal.pose);
+          pubGoal.publish(nextGoal.pose);
           rate.sleep();
         }
 
@@ -86,7 +85,7 @@ int main(int argc, char** argv) {
 
         ROS_INFO_STREAM("Waiting to finish..");
         while(wait && ros::ok()){
-          pubTwist.publish(nextGoal.pose);
+          pubGoal.publish(nextGoal.pose);
           ros::spinOnce();
           rate.sleep();
           

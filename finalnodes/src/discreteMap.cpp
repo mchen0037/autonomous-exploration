@@ -168,13 +168,11 @@ int main(int argc, char** argv) {
 
 
   while (ros::ok()) {
+    std_msgs::String msg;
+    msg.data = graph;
+    pub.publish(msg);
+    finished = false;
 
-    // if(finished){
-      std_msgs::String msg;
-      msg.data = graph;
-      pub.publish(msg);
-      finished = false;
-    // }
     printGraph();
     ros::spinOnce();
     rate.sleep();
