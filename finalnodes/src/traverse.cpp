@@ -1,198 +1,148 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Twist.h>
-#include <tf2_ros/transform_listener.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <cmath>
-#include <std_msgs/Empty.h>
 #include <tf/transform_datatypes.h>
-#include <tf2/utils.h>
+#include <actionlib/client/simple_action_client.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <move_base_msgs/MoveBaseAction.h>
 #include <angles/angles.h>
+#include <tf2/utils.h>
+#include <Eigen/Eigenvalues>
+#include <Eigen/Dense>
+#include <math.h>
+#include <std_srvs/Empty.h>
+#include <sensor_msgs/LaserScan.h>
 
+using namespace Eigen;
 
-//#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-
-/*This is the target destination we are trying to get to also we are assuming that the user won't try to get to a point that has a collision*/
-float dest_x;
-float dest_y;
-float dest_theta;
-
-/*This is current pose*/
-float curr_x;
-float curr_y;
-float curr_theta;
-
+float t_x;
+float t_y;
+float t_theta;
+float vol = 0;
 bool newValue = false;
-float PI =  3.14159265358979323846;
-int hertz = 20;
+geometry_msgs::Pose current_pose;
 
-void currPose(const geometry_msgs::Pose msg){
-    curr_x = msg.position.x;
-    curr_y = msg.position.y;
-    curr_theta = angles::normalize_angle_positive(tf2::getYaw(msg.orientation));
+typedef Matrix<float, 3,3> Matrix3f;
 
- 	// ROS_INFO_STREAM("curr x "<< curr_x << " curr y "<< curr_y << " curr Theta " << curr_theta);   
+Matrix3f covar;
+EigenSolver<Matrix3f> es;
 
+float current_min_scan = 999.9;
+
+void serviceActivated() {
+    ROS_INFO_STREAM("Service received goal");
+}
+
+void serviceDone(const actionlib::SimpleClientGoalState& state, const move_base_msgs::MoveBaseResultConstPtr& result) {
+    ROS_INFO_STREAM("Service completed");
+    ROS_INFO_STREAM("Final state " << state.toString().c_str());
+}
+
+void serviceFeedback(const move_base_msgs::MoveBaseFeedbackConstPtr& fb) {
+    ROS_INFO_STREAM("Service still running");
+    ROS_INFO_STREAM("Current pose (x,y) " <<
+		    fb->base_position.pose.position.x << "," <<
+		    fb->base_position.pose.position.y);
 }
 
 void destPose(const geometry_msgs::Pose msg){
-    dest_x = msg.position.x;
-    dest_y = msg.position.y;
-    dest_theta = angles::normalize_angle_positive(tf2::getYaw(msg.orientation));
-
-	//ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
+    t_x = msg.position.x;
+    t_y = msg.position.y;
+    t_theta = 1; //the underlying path finding algorithm defaults to zero, so this works to avoid any wierd angle changes and formatting
 
 	newValue = true;
+}
+
+void getCurrentPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
+  	current_pose = msg.pose.pose;
+
+  	covar(0,0) = msg.pose.covariance[0];		covar(0,1) = msg.pose.covariance[1];		covar(0,2) = msg.pose.covariance[5];
+	covar(1,0) = msg.pose.covariance[6];		covar(1,1) = msg.pose.covariance[7];		covar(1,2) = msg.pose.covariance[11];
+	covar(2,0) = msg.pose.covariance[30];		covar(2,1) = msg.pose.covariance[31];		covar(2,2) = msg.pose.covariance[35];
+
+	es.compute(covar, false); //eigen values based on std::complex which has a real and imaginary component
+
+	vol = 4/3 * 3.14159265358979 *sqrt(es.eigenvalues()[0].real() * 9.348) * sqrt(es.eigenvalues()[1].real() * 9.348) * sqrt(es.eigenvalues()[2].real() * 9.348);
+	ROS_INFO_STREAM("Ellipsoid Volume = " <<vol);
 
 }
 
-float absolute(float num){
-	return (num >= 0) ? num : num * -1;
-}
-
-/*gives me the angle I need to orient myself to move to (NOT RELATIVE TO MYSELF, JUST THE ANGLE I NEED!)*/
-float targetAngle(){
-
-	float dist_x = dest_x - (curr_x);
-	float dist_y = dest_y - (curr_y);
-
-	float destAngle = atan(absolute(dist_y/dist_x));
-
-	if(dist_x < 0 && dist_y < 0){
-		destAngle += PI;
-	}			
-	else if(dist_x > 0 && dist_y < 0){
-		destAngle = 2*PI - destAngle;
+void getScan(const sensor_msgs::LaserScan msg) {
+	float min = 999.9;
+	for (int i = 0; i < msg.ranges.size(); ++i) {
+		if (msg.ranges[i] < min) {
+			min = msg.ranges[i];
+		}
 	}
-	else if(dist_x < 0 && dist_y > 0){
-		destAngle = PI - destAngle;
-	}
-
-	//convert to -pi - pi range
-	//return (destAngle <= PI) ? destAngle : destAngle - 2 * PI;
-
-	return destAngle;
-} 
-
-float dist(){
-	return sqrt(pow(dest_x - curr_x, 2) + pow(dest_y - curr_y, 2));
-
+	current_min_scan = min;
 }
 
-
-/*Takes in pose and sends it to topic*/
-int main(int argc, char** argv){ 
+int main(int argc, char ** argv){
 
 	ros::init(argc, argv, "gotopose");
 	ros::NodeHandle nh;
-	ros::Rate rate(hertz);
 
-	ros::Subscriber subDest = nh.subscribe("targetpose", 1000, destPose);
-	ros::Subscriber subCurr = nh.subscribe("perfect_localization", 1000, currPose);
-	
-	//ros::Subscriber subTF = nh.subscribe("/tf2_ros", 1000, &tf2MessageReceived);
-
+	ros::ServiceClient reset = nh.serviceClient<std_srvs::Empty>("/global_localization");
+	ros::Subscriber subDestPose = nh.subscribe("goal", 1000, &destPose); 
+	ros::Subscriber subCurrPose = nh.subscribe("amcl_pose", 1000, getCurrentPose);
+	ros::Subscriber subScan = nh.subscribe("/scan", 1000, getScan);
 	ros::Publisher pubTwist = nh.advertise<geometry_msgs::Twist>("/husky_velocity_controller/cmd_vel", 1000);
-	ros::Publisher pubRestart = nh.advertise<std_msgs::Empty>("restartTopic", 1000);
+
+	actionlib::SimpleActionClient<move_base_msgs::MoveBaseAction>ac("move_base",true);
+
+	move_base_msgs::MoveBaseGoal goal;
+	std_srvs::Empty emptymsg;
+
+	ros::Rate rate(20);
+
+	goal.target_pose.header.frame_id = "map";
 
 
-	for (int i = 0; i < 80; ++i) {
-		ros::spinOnce();
-		rate.sleep();
-	}
+	while(ros::ok()){
 
-	geometry_msgs::Twist toRotate; 
-
-	geometry_msgs::Twist toMove;
-
-	geometry_msgs::Twist stop;
-
-
-	ROS_INFO_STREAM("Waiting for a Position..");
-	while(ros::ok()){//this is a constant infinite loop
-
-		if(newValue){//if user inputted a new value, move to that place
-			ROS_INFO_STREAM("I got a new destination");
-			ros::spinOnce();
-
-			float distance = dist();
-
-			float currAngle = curr_theta;
-
-			float destAngle = targetAngle();	
-
-			ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
-
-			// ROS_INFO_STREAM("Angle I need = "<<destAngle <<" current Angle "<< currAngle);
-
-			// float targetRotation = destAngle - currAngle; //may need to change if angle between rotation is really tiny
-			// /*So now we have the distance we need to traverse and how much we need to rotate*/
-
-			// ROS_INFO_STREAM("Distance to target "<< distance << " | Rotation I need to take "<< targetRotation);
-
-
-			//this is where my calibration and first rotation happens
-
-rerotate:			
-			float calibration = targetAngle() - curr_theta;
-			while(!(calibration < 0.1 && calibration > -0.1)){ 
-			//	ROS_INFO_STREAM("Target x "<< dest_x << " Target y "<< dest_y << " target Theta " << dest_theta);
-
-				toRotate.angular.z = calibration * 2; 
-				toRotate.linear.x = 0;
-				pubTwist.publish(toRotate);
-				ros::spinOnce();
-				rate.sleep();
-
-				calibration = targetAngle() - curr_theta;
-				ROS_INFO_STREAM("rotating only: angle = " << calibration);
-
-			//	ROS_INFO_STREAM ("dest "<<destAngle <<" curr Angle "<<tf::getYaw(transformStamped.transform.rotation) << " calibration "  << calibration);
-
-			}
-
-			pubTwist.publish(stop);
-			rate.sleep();
-
-			//ROS_INFO_STREAM("Finished first rotation");
-
-			//The actual moving which controls both linear and angular, deaccalarates togiven bound
-			while(distance > .1){ //Degree of accuracy
-				//transformStamped = buffer.lookupTransform("odom", "base_link",ros::Time(0));
-
-				if (absolute(calibration) > .3){ goto rerotate; }
-				toMove.angular.z = calibration; 
-				toMove.linear.x = distance;
-				pubTwist.publish(toMove);
-				ros::spinOnce();
-				rate.sleep();
-
-				distance = dist();
-				calibration = targetAngle() - curr_theta; //our calibration is based on differenct angles because we're moving now
-
-				ROS_INFO_STREAM("moving:  angle  = "<< calibration << " | distance = " << distance) ;
-		
-
-			}
-
-			pubTwist.publish(stop);
-			rate.sleep();
-
-			ROS_INFO_STREAM("Finished.");
-
-			//tells getpose that this part is done
-			std_msgs::Empty emMsg;
-			for(int i = 0; i < hertz+2; i++){
-				pubRestart.publish(emMsg);
-				rate.sleep();
-			}
-
+		if(newValue){
 
 			newValue = false;
+			goal.target_pose.header.stamp = ros::Time::now();
+
+			goal.target_pose.pose.position.x = t_x;
+			goal.target_pose.pose.position.y = t_y;
+			goal.target_pose.pose.orientation.w = t_theta;
+
+			ROS_INFO_STREAM("hi ");
+
+			ac.sendGoal(goal,&serviceDone,&serviceActivated,&serviceFeedback);
+			//ac.waitForResult();
+			ros::Time start = ros::Time::now();
+			while (ac.getState() != actionlib::SimpleClientGoalState::SUCCEEDED && 
+				ros::Time::now() - start < ros::Duration(20.0)) {
+			  	
+				ros::spinOnce();
+			  	rate.sleep();
+
+			  	if(vol > 9000){
+			  		// ac.cancelGoal();
+			  		ROS_WARN_STREAM("Covariance is LARGE");
+			  		reset.call(emptymsg);
+			  	}
+
+			  	if (current_min_scan < 0.1) {
+			  		ac.cancelGoal();
+			  		ROS_INFO_STREAM("Too close to wall!!! Backing up.");
+			  		geometry_msgs::Twist twist;
+			  		twist.linear.x = -0.2;
+			  		for (int i = 0; i < 40; ++i) {
+			  			pubTwist.publish(twist);
+			  			rate.sleep();
+			  		}
+			  		break;
+			  	}
+			  
+			 }
+
+			ROS_INFO_STREAM("bye ");
 		}
 		ros::spinOnce();
 		rate.sleep();
-
 	}
-
 }

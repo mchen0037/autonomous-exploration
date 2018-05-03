@@ -5,6 +5,7 @@
 #include <angles/angles.h>
 #include <map>
 #include <std_msgs/String.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 std::string graph = "";
 // std_msgs::Int32MultiArray arr;
@@ -102,9 +103,9 @@ void discretize(const nav_msgs::OccupancyGrid msg){
 
 
 
-void subPose(const geometry_msgs::Pose msg) {
-  current_pose = msg;
-  float angle = tf2::getYaw(msg.orientation);
+void subPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
+  current_pose = msg.pose.pose;
+  float angle = tf2::getYaw(current_pose.orientation);
   angle = angles::normalize_angle_positive(angle);
   float seeUpToX = roundHalf(2 * cos(angle) + current_pose.position.x);
   float seeUpToY = roundHalf(2 * sin(angle) + current_pose.position.y);
@@ -163,7 +164,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
   ros::Rate rate(20);
   ros::Subscriber sub = nh.subscribe<nav_msgs::OccupancyGrid>("/map", 1000, discretize);
-  ros::Subscriber sub2 = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, subPose);
+  ros::Subscriber sub2 = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1000, subPose);
   ros::Publisher pub = nh.advertise<std_msgs::String>("viewed_map", 1000);
 
 

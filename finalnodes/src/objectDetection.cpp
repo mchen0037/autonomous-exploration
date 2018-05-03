@@ -8,6 +8,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <angles/angles.h>
 #include <map>
+#include <tf2/utils.h>
 //#include <tf/Matrix3x3.h>
 
 
@@ -58,17 +59,11 @@ struct treasureChest{
 
 treasureChest tc;
 
-void getPose(const geometry_msgs::Pose msg){
-  float amclAngle = tf::getYaw(msg.orientation);
-  currentPose.x = msg.position.x;
-  currentPose.y = msg.position.y;
-
-  geometry_msgs::Quaternion q;
-  q = msg.orientation;
-  currentPose.theta = angles::normalize_angle_positive(tf::getYaw(q));
-
+void getPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
+  currentPose.x = msg.pose.pose.position.x;
+  currentPose.y = msg.pose.pose.position.y;
+  currentPose.theta = angles::normalize_angle_positive(tf2::getYaw(msg.pose.pose.orientation));
 }
-
 void sawTreasure(const logical_camera_plugin::logicalImage msg) {
 
   tc.addTreasure(msg.modelName ,msg.pose_pos_x, msg.pose_pos_y);
@@ -81,7 +76,7 @@ int main(int argc, char** argv) {
   ros::Rate rate(20);
 
   ros::Subscriber sub = nh.subscribe<logical_camera_plugin::logicalImage>("/objectsDetected", 1000, sawTreasure);
-  ros::Subscriber subPose = nh.subscribe("perfect_localization", 1000, getPose);
+  ros::Subscriber subPose = nh.subscribe("amcl_pose", 1000, getPose);
 
 
   while (ros::ok()) {

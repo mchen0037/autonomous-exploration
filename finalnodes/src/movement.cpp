@@ -8,6 +8,7 @@
 #include <std_msgs/Empty.h>
 #include <tf2/utils.h>
 #include <iostream>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 bool wait = true;
 geometry_msgs::Pose current_goal;
@@ -17,8 +18,8 @@ void toReset(const std_msgs::Empty msg){
   wait = false;
 }
 
-void getCurrentPose(const geometry_msgs::Pose msg) {
-  current_pose = msg;
+void getCurrentPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
+  current_pose = msg.pose.pose;
 }
 
 void getGoal(const geometry_msgs::Pose msg) {
@@ -31,7 +32,7 @@ int main(int argc, char** argv) {
 
   ros::Rate rate(20);
 
-  ros::Subscriber sub = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, getCurrentPose);
+  ros::Subscriber sub = nh.subscribe<geometry_msgs::PoseWithCovarianceStamped>("amcl_pose", 1000, getCurrentPose);
   ros::Publisher pubGoal = nh.advertise<geometry_msgs::Pose>("targetpose", 1000);
   ros::Subscriber restart = nh.subscribe<std_msgs::Empty>("restartTopic", 1000, toReset);
   ros::Subscriber subGoal = nh.subscribe<geometry_msgs::Pose>("goal", 1, getGoal);
