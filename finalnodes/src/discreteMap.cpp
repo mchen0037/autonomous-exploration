@@ -34,17 +34,17 @@ void markRead(int index) {
   roundForty(index);
   if (graph[index] != '1')
     graph[index] = '2';
-  if (graph[index + 40] != '1')
+  if (graph[index + 40] != '1' && index + 40 < 1600)
     graph[index + 40] = '2';
-  if (graph[index - 40] != '1')
+  if (graph[index - 40] != '1' && index - 40 > 0)
     graph[index - 40] = '2';
-  if (graph[index + 41] != '1')
+  if (graph[index + 41] != '1' && index + 41 < 1600)
     graph[index + 41] = '2';
-  if (graph[index - 41] != '1')
+  if (graph[index - 41] != '1' && index - 41 > 0)
     graph[index - 41] = '2';
-  if (graph[index - 1] != '1')
+  if (graph[index - 1] != '1' && index - 1 > 0)
     graph[index - 1] = '2';
-  if (graph[index + 1] != '1')
+  if (graph[index + 1] != '1' && index + 1 < 1600)
     graph[index + 1] = '2';
 }
 
