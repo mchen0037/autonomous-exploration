@@ -86,14 +86,16 @@ int main(int argc, char** argv) {
           " T " << tf2::getYaw(q));
 
         ROS_INFO_STREAM("Waiting to finish..");
+
         while(wait && ros::ok()){
           pubGoal.publish(nextGoal.pose);
           ros::spinOnce();
           rate.sleep();
-          
         }
 
-
+        if (i == plannermsg.response.plan.poses.size() -1) {
+          break;
+        }
       }
     }
     else {
