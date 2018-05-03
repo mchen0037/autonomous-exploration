@@ -21,6 +21,10 @@ float t_theta;
 float vol = 0;
 bool newValue = false;
 geometry_msgs::Pose current_pose;
+float stuckInCorner = 0;
+
+std::vector<float> avg;
+float average = 0;
 
 typedef Matrix<float, 3,3> Matrix3f;
 
@@ -39,10 +43,10 @@ void serviceDone(const actionlib::SimpleClientGoalState& state, const move_base_
 }
 
 void serviceFeedback(const move_base_msgs::MoveBaseFeedbackConstPtr& fb) {
-    ROS_INFO_STREAM("Service still running");
-    ROS_INFO_STREAM("Current pose (x,y) " <<
-		    fb->base_position.pose.position.x << "," <<
-		    fb->base_position.pose.position.y);
+    // ROS_INFO_STREAM("Service still running");
+    // ROS_INFO_STREAM("Current pose (x,y) " <<
+		  //   fb->base_position.pose.position.x << "," <<
+		  //   fb->base_position.pose.position.y);
 }
 
 void destPose(const geometry_msgs::Pose msg){
@@ -69,12 +73,25 @@ void getCurrentPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
 
 void getScan(const sensor_msgs::LaserScan msg) {
 	float min = 999.9;
+	int index = -1;
 	for (int i = 0; i < msg.ranges.size(); ++i) {
 		if (msg.ranges[i] < min) {
+			index = i;
 			min = msg.ranges[i];
 		}
 	}
-	current_min_scan = min;
+	
+	if (avg.size() < 10) {
+		avg.push_back(min);
+		average += min;
+	}
+	else {
+		average -= avg.front();
+		avg.erase(avg.begin());
+		avg.push_back(min);
+		average += min;
+	}
+
 }
 
 int main(int argc, char ** argv){
@@ -97,6 +114,10 @@ int main(int argc, char ** argv){
 
 	goal.target_pose.header.frame_id = "map";
 
+	for (int i = 0 ; i < 60; ++i) {
+		ros::spinOnce();
+		rate.sleep();
+	}
 
 	while(ros::ok()){
 
@@ -109,7 +130,7 @@ int main(int argc, char ** argv){
 			goal.target_pose.pose.position.y = t_y;
 			goal.target_pose.pose.orientation.w = t_theta;
 
-			ROS_INFO_STREAM("hi ");
+			// ROS_INFO_STREAM("hi ");
 
 			ac.sendGoal(goal,&serviceDone,&serviceActivated,&serviceFeedback);
 			//ac.waitForResult();
@@ -125,22 +146,36 @@ int main(int argc, char ** argv){
 			  		ROS_WARN_STREAM("Covariance is LARGE");
 			  		reset.call(emptymsg);
 			  	}
-
-			  	if (current_min_scan < 0.1) {
+			  	// ROS_INFO_STREAM("Avg: " << average / avg.size());
+			  	if (average / avg.size() < .4) {
 			  		ac.cancelGoal();
-			  		ROS_INFO_STREAM("Too close to wall!!! Backing up.");
-			  		geometry_msgs::Twist twist;
-			  		twist.linear.x = -0.2;
-			  		for (int i = 0; i < 40; ++i) {
-			  			pubTwist.publish(twist);
-			  			rate.sleep();
+
+			  		if (stuckInCorner > 4.0) {
+			  			ROS_INFO_STREAM("I think I'm stuck in a corner..");
+				  		geometry_msgs::Twist twist;
+				  		twist.linear.x = 0.2;
+				  		for (int i = 0; i < 200; ++i) {
+				  			pubTwist.publish(twist);
+				  			rate.sleep();
+				  		}
+				  		stuckInCorner = 0.0;
 			  		}
-			  		break;
+			  		else {
+				  		ROS_INFO_STREAM("Too close to wall!!! Backing up.");
+				  		geometry_msgs::Twist twist;
+				  		twist.linear.x = -0.2;
+				  		for (int i = 0; i < 200; ++i) {
+				  			pubTwist.publish(twist);
+				  			rate.sleep();
+				  		}
+				  		stuckInCorner += 1.0;
+				  		break;
+			  		}
 			  	}
+			  	stuckInCorner -= 0.5;
 			  
 			 }
 
-			ROS_INFO_STREAM("bye ");
 		}
 		ros::spinOnce();
 		rate.sleep();
