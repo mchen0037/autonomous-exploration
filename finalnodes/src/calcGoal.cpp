@@ -20,8 +20,8 @@ void getViewedMap(const std_msgs::String msg) {
     if (msg.data[i] == '0') {
       float y = i / 40;
       float x = i % 40;
-      goalToSee.position.x = -1 * 10 + (x * 0.5); 
-      goalToSee.position.y = 10 - (y * 0.5);
+      goalToSee.position.x = -1 * 9 + (x * 0.5); 
+      goalToSee.position.y = 9 - (y * 0.5);
       tf2::Quaternion q;
       q.setRPY(0,0,0);
       tf2::fromMsg(goalToSee.orientation, q);
@@ -36,9 +36,10 @@ int main(int argc, char** argv) {
 
   ros::Rate rate(20);
   ros::Subscriber sub = nh.subscribe<std_msgs::String>("viewed_map", 1000, getViewedMap);
-  ros::Publisher pub = nh.advertise<geometry_msgs::Pose>("goal", 1000); 
+  ros::Publisher pub = nh.advertise<geometry_msgs::Pose>("goal", 1); 
 
   while (ros::ok()) {
+    ROS_INFO_STREAM(goalToSee);
     pub.publish(goalToSee);
     ros::spinOnce();
     rate.sleep();

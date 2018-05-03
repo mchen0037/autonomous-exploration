@@ -25,7 +25,7 @@ void getGoal(const geometry_msgs::Pose msg) {
   current_goal = msg;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv) { 
   ros::init(argc, argv, "movement");
   ros::NodeHandle nh;
 
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   ros::Subscriber sub = nh.subscribe<geometry_msgs::Pose>("perfect_localization", 1000, getCurrentPose);
   ros::Publisher pubGoal = nh.advertise<geometry_msgs::Pose>("targetpose", 1000);
   ros::Subscriber restart = nh.subscribe<std_msgs::Empty>("restartTopic", 1000, toReset);
-  ros::Subscriber subGoal = nh.subscribe<geometry_msgs::Pose>("goal", 1000, getGoal);
+  ros::Subscriber subGoal = nh.subscribe<geometry_msgs::Pose>("goal", 1, getGoal);
 
   ros::ServiceClient client = nh.serviceClient<nav_msgs::GetPlan>("/move_base/make_plan");
   client.waitForExistence();
@@ -56,6 +56,8 @@ int main(int argc, char** argv) {
     plannermsg.request.start.pose.orientation = current_pose.orientation;
 
     q.setRPY(0, 0, 0);
+
+    ROS_INFO_STREAM(current_goal);
 
     plannermsg.request.goal.header.frame_id = "map";
     plannermsg.request.goal.header.stamp = ros::Time::now();
