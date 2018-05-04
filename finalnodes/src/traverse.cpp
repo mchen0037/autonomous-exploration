@@ -130,8 +130,9 @@ int main(int argc, char ** argv){
 			goal.target_pose.pose.position.y = t_y;
 			goal.target_pose.pose.orientation.w = t_theta;
 
-			// ROS_INFO_STREAM("hi ");
 
+
+			tryAgain:
 			ac.sendGoal(goal,&serviceDone,&serviceActivated,&serviceFeedback);
 			//ac.waitForResult();
 			ros::Time start = ros::Time::now();
@@ -141,7 +142,7 @@ int main(int argc, char ** argv){
 				ros::spinOnce();
 			  	rate.sleep();
 
-			  	if(vol > 9000){
+			  	if(vol > 4){
 			  		// ac.cancelGoal();
 			  		ROS_WARN_STREAM("Covariance is LARGE");
 			  		reset.call(emptymsg);
@@ -149,13 +150,14 @@ int main(int argc, char ** argv){
 			  	// ROS_INFO_STREAM("Avg: " << average / avg.size());
 			  	if (average / avg.size() < .4) {
 			  		ac.cancelGoal();
-
+			  		ROS_INFO_STREAM(stuckInCorner);
 			  		if (stuckInCorner > 4.0) {
 			  			ROS_INFO_STREAM("I think I'm stuck in a corner..");
 				  		geometry_msgs::Twist twist;
 				  		twist.linear.x = 0.2;
-				  		for (int i = 0; i < 200; ++i) {
+				  		while (average / avg.size() < .4) {
 				  			pubTwist.publish(twist);
+				  			ros::spinOnce();
 				  			rate.sleep();
 				  		}
 				  		stuckInCorner = 0.0;
@@ -169,10 +171,16 @@ int main(int argc, char ** argv){
 				  			rate.sleep();
 				  		}
 				  		stuckInCorner += 1.0;
-				  		break;
+				  		goto tryAgain;
 			  		}
+			  		
+			  	}
+			  	if (stuckInCorner < 0) {
+			  		stuckInCorner = 0;
 			  	}
 			  	stuckInCorner -= 0.5;
+
+			  	
 			  
 			 }
 

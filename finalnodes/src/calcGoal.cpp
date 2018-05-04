@@ -73,6 +73,12 @@ void findRandom(const ros::Publisher* pub) {
   float x = i % 40;
   goalToSee.position.x = -1 * 9 + (x * 0.5); 
   goalToSee.position.y = 9 - (y * 0.5);
+
+  if (goalToSee.position.x > 9) { goalToSee.position.x = 9;}
+  else if (goalToSee.position.x < -9) { goalToSee.position.x = -9;}
+  if (goalToSee.position.y > 9) {goalToSee.position.y = 9;}
+  else if (goalToSee.position.y < -9) {goalToSee.position.y = -9;}
+
   tf2::Quaternion q;
   q.setRPY(0,0,0);
   tf2::fromMsg(goalToSee.orientation, q);
@@ -88,6 +94,20 @@ void findRandom(const ros::Publisher* pub) {
 
 void getCurrentPose(const geometry_msgs::PoseWithCovarianceStamped msg) {
     current_pose = msg.pose.pose;
+
+    // if (msg.pose.pose.position.x >= 0 && msg.pose.pose.position.y >= 0) {
+    //   switcher = 4;
+    // }
+    // else if (msg.pose.pose.position.x >= 0 && msg.pose.pose.position.y < 0) {
+    //   switcher = 3;
+    // }
+    // else if (msg.pose.pose.position.x < 0 && msg.pose.pose.position.y < 0) {
+    //   switcher = 2;
+    // }
+    // else if (msg.pose.pose.position.x < 0 && msg.pose.pose.position.y >= 0) {
+    //   switcher = 1;
+    // }
+
 }
 
 void getViewedMap(const std_msgs::String msg){
@@ -116,7 +136,7 @@ int main(int argc, char** argv) {
     ros::Time start = ros::Time::now();
 
     findRandom(&pub);
-    while(ros::Time::now() - start < ros::Duration(secondsToWait) && ros::ok()){
+    while(ros::Time::now() - start < ros::Duration(12) && ros::ok()){
 
     }
     ros::spinOnce();
